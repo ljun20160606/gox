@@ -1,12 +1,12 @@
 package slice
 
 import (
-	"github.com/ljun20160606/go-lib/reflectl"
+	"github.com/ljun20160606/gox/reflectx"
 	"reflect"
 )
 
 func Filter(src interface{}, filter func(i interface{}) bool) error {
-	destRef, err := reflectl.IsSlicePtr(src)
+	destRef, err := reflectx.IsSlicePtr(src)
 	if err != nil {
 		return err
 	}

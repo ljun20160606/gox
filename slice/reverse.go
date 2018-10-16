@@ -1,7 +1,7 @@
 package slice
 
 import (
-	"github.com/ljun20160606/go-lib/reflectl"
+	"github.com/ljun20160606/gox/reflectx"
 	"reflect"
 )
 
@@ -9,7 +9,7 @@ func Reverse(s interface{}) error {
 	valueOf := reflect.ValueOf(s)
 	indirect := reflect.Indirect(valueOf)
 	if indirect.Kind() != reflect.Slice {
-		return reflectl.MustSlice
+		return reflectx.MustSlice
 	}
 	for i, j := 0, valueOf.Len()-1; i < j; i, j = i+1, j-1 {
 		left := valueOf.Index(i)

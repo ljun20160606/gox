@@ -1,4 +1,4 @@
-package reflect
+package reflectx
 
 const (
 	NilPtr errorSlice = iota
