@@ -1,7 +1,5 @@
 package fs
 
-import "io"
-
 var fs = &osFileSystem{}
 
 func WriteJSON(path string, data interface{}) error {
@@ -20,10 +18,14 @@ func MkdirP(path string) error {
 	return fs.MkdirP(path)
 }
 
-func WriteFile(name string, writeFunc func(writer io.Writer) error) error {
+func WriteFile(name string, writeFunc WriteFunc) error {
 	return fs.WriteFile(name, writeFunc)
 }
 
-func WriteFileNotExist(name string, writeFunc func(writer io.Writer) error) error {
+func ReadFile(name string, readFunc ReadFunc) error {
+	return fs.ReadFile(name, readFunc)
+}
+
+func WriteFileNotExist(name string, writeFunc WriteFunc) error {
 	return fs.WriteFileNotExist(name, writeFunc)
 }

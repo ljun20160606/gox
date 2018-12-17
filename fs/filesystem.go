@@ -6,14 +6,20 @@ import (
 	"os"
 )
 
+type (
+	WriteFunc func(writer io.Writer) error
+	ReadFunc func(reader io.Reader) error
+)
+
 // FileSystem ...
 type FileSystem interface {
 	Exists(path string) bool
 	MkdirP(path string) error
-	WriteFile(name string, writeFunc func(writer io.Writer) error) error
-	WriteFileNotExist(name string, writeFunc func(writer io.Writer) error) error
-	WriteJSON(path string, data interface{}) error
 	ReadJSON(path string, data interface{}) error
+	WriteJSON(path string, data interface{}) error
+	WriteFileNotExist(name string, writeFunc WriteFunc) error
+	ReadFile(name string, readFunc ReadFunc) error
+	WriteFile(name string, writeFunc WriteFunc) error
 }
 
 // File ...
@@ -28,28 +34,24 @@ type File interface {
 
 type osFileSystem struct{}
 
-func (*osFileSystem) WriteJSON(path string, data interface{}) error {
-	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-	if err != nil {
-		return err
-	}
-	err = json.NewEncoder(file).Encode(data)
-	if err != nil {
-		return err
-	}
-	return nil
+func (o *osFileSystem) ReadJSON(path string, data interface{}) error {
+	return o.ReadFile(path, func(reader io.Reader) error {
+		err := json.NewDecoder(reader).Decode(data)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
-func (*osFileSystem) ReadJSON(path string, data interface{}) error {
-	file, err := os.OpenFile(path, os.O_RDONLY, 0)
-	if err != nil {
-		return err
-	}
-	err = json.NewDecoder(file).Decode(data)
-	if err != nil {
-		return err
-	}
-	return nil
+func (o *osFileSystem) WriteJSON(path string, data interface{}) error {
+	return o.WriteFile(path, func(writer io.Writer) error {
+		err := json.NewEncoder(writer).Encode(data)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 func (*osFileSystem) Exists(path string) bool {
@@ -64,7 +66,16 @@ func (*osFileSystem) MkdirP(path string) error {
 	return nil
 }
 
-func (*osFileSystem) WriteFile(name string, writeFunc func(writer io.Writer) error) error {
+func (*osFileSystem) ReadFile(name string, readFunc ReadFunc) error {
+	file, err := os.OpenFile(name, os.O_RDONLY, 0)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	return readFunc(file)
+}
+
+func (*osFileSystem) WriteFile(name string, writeFunc WriteFunc) error {
 	file, err := os.Create(name)
 	if err != nil {
 		return err
@@ -73,10 +84,10 @@ func (*osFileSystem) WriteFile(name string, writeFunc func(writer io.Writer) err
 	return writeFunc(file)
 }
 
-func (o *osFileSystem) WriteFileNotExist(name string, writeFunc func(writer io.Writer) error) error {
+func (o *osFileSystem) WriteFileNotExist(name string, writeFunc WriteFunc) error {
 	_, err := os.Stat(name)
 	if err != nil {
-		o.WriteFile(name, writeFunc)
+		return o.WriteFile(name, writeFunc)
 	}
 	return nil
 }
